@@ -1,0 +1,159 @@
+WITH
+  rank_events AS(
+  SELECT
+    user_pseudo_id,
+    event_name,
+    TIMESTAMP_MICROS(event_timestamp) AS event_timestamp_mod,
+    country,
+    category,
+    RANK() OVER (PARTITION BY user_pseudo_id, event_name ORDER BY (event_timestamp) ASC) AS rank_num,
+  FROM
+    `tc-da-1.turing_data_analytics.raw_events` ),
+  unique_events AS (
+  SELECT
+    *
+  FROM
+    rank_events
+  WHERE
+    rank_num = 1
+  GROUP BY
+    ALL
+  ORDER BY
+    user_pseudo_id ASC),
+  top_countries AS (
+  SELECT
+    country,
+    COUNT(event_timestamp_mod) AS events_count
+  FROM
+    unique_events
+  GROUP BY
+    ALL
+  ORDER BY
+    events_count DESC
+  LIMIT
+    3),
+  event_counts AS (
+  SELECT
+    DISTINCT unique_events.event_name AS event_name,
+    COUNT(unique_events.event_timestamp_mod) OVER (PARTITION BY top_countries.country, unique_events.event_name, category) AS event_type_count,
+    top_countries.country AS country,
+    category
+  FROM
+    unique_events
+  INNER JOIN
+    top_countries
+  ON
+    unique_events.country = top_countries.country
+  WHERE
+    unique_events.event_name IN( 'page_view',
+      'view_item',
+      'add_to_cart',
+      'begin_checkout',
+      'purchase')
+  GROUP BY
+    event_name,
+    unique_events.event_timestamp_mod,
+    top_countries.country,
+    category),
+  funnel_events AS (
+  SELECT
+    CASE
+      WHEN event_name = 'page_view' THEN 1
+      WHEN event_name = 'view_item' THEN 2
+      WHEN event_name = 'add_to_cart' THEN 3
+      WHEN event_name = 'begin_checkout' THEN 4
+      WHEN event_name = 'purchase' THEN 5
+  END
+    AS event_order,
+    event_name,
+    SUM(CASE
+        WHEN country = 'United States' THEN event_type_count
+        ELSE 0
+    END
+      ) AS United_States_events,
+    SUM(CASE
+        WHEN country = 'Canada' THEN event_type_count
+        ELSE 0
+    END
+      ) AS Canada_events,
+    SUM(CASE
+        WHEN country = 'India' THEN event_type_count
+        ELSE 0
+    END
+      ) AS India_events,
+    SUM(CASE
+        WHEN category = 'mobile' THEN event_type_count
+        ELSE 0
+    END
+      ) AS mobile_events,
+    SUM(CASE
+        WHEN category = 'desktop' THEN event_type_count
+        ELSE 0
+    END
+      ) AS desktop_events,
+    SUM(CASE
+        WHEN category = 'tablet' THEN event_type_count
+        ELSE 0
+    END
+      ) AS tablet_events
+  FROM
+    event_counts
+  GROUP BY
+    event_order,
+    event_name
+  ORDER BY
+    event_order ASC),
+  funnel_events_perc AS (
+  SELECT
+    *,
+    SUM(United_States_events + Canada_events + India_events) OVER (PARTITION BY event_name ORDER BY event_order) AS Full_sum
+  FROM
+    funnel_events
+  GROUP BY
+    ALL
+  ORDER BY
+    event_order ASC),
+  funnel_perc AS (
+  SELECT
+    *,
+    ROUND((full_sum/MAX(full_sum) OVER (ORDER BY event_order))*100,2) AS Overall_conv_rate,
+    ROUND((United_States_events/MAX(United_States_events) OVER (ORDER BY event_order))*100,2) AS United_States_conv_rate,
+    ROUND((Canada_events/MAX(Canada_events) OVER (ORDER BY event_order))*100,2) AS Canada_conv_rate,
+    ROUND((India_events/MAX(India_events) OVER (ORDER BY event_order))*100,2) AS India_conv_rate,
+    ROUND((mobile_events/MAX(mobile_events) OVER (ORDER BY event_order))*100,2) AS Mobile_conv_rate,
+    ROUND((desktop_events/MAX(desktop_events) OVER (ORDER BY event_order))*100,2) AS Desktop_conv_rate,
+    ROUND((tablet_events/MAX(tablet_events) OVER (ORDER BY event_order))*100,2) AS Tablet_conv_rate
+  FROM
+    funnel_events_perc
+  GROUP BY
+    event_order,
+    event_name,
+    United_States_events,
+    Canada_events,
+    India_events,
+    Full_sum,
+    mobile_events,
+    desktop_events,
+    tablet_events
+  ORDER BY
+    event_order ASC)
+SELECT
+  event_order,
+  event_name,
+  United_States_events,
+  Canada_events,
+  India_events,
+  Overall_conv_rate,
+  United_States_conv_rate,
+  Canada_conv_rate,
+  India_conv_rate,
+  Desktop_events,
+  Mobile_events,
+  Tablet_events,
+  Desktop_conv_rate,
+  Mobile_conv_rate,
+  Tablet_conv_rate
+FROM
+  funnel_perc
+ORDER BY
+  event_order ASC
