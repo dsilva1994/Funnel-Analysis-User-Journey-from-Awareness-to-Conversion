@@ -57,10 +57,10 @@ Since this is the first attempt at mapping the user journey, I selected events t
   - 📄 *`cleaned-data.csv`* – Processed data after cleaning 
 
 - **SQL Query:**
-  - 📄 *`SQL query used for analysis.sql`* – Aggregates data by user first interaction, country, and device.  
+  - 📄 *`SQL query used for analysis.sql`* – Aggregates data query by user first interaction, country, and device.  
 
 - **Report:**  
-  - 📄 *`Ecommerce_Funnel_Analysis_Report.pdf`* – Detailed analysis, insights, and recommendations.  
+  - 📄 *`Funnel Analysis- User Journey from Awareness to Conversion.pdf`* – Detailed analysis, insights, and recommendations.  
 
 ---
 
