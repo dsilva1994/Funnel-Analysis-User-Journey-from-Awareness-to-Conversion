@@ -80,5 +80,13 @@ Since this is the first attempt at mapping the user journey, I selected events t
 - **Licensing** – This work is licensed under **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)**, meaning it can be used for learning but not for commercial purposes.  
 
 ---
+## Contact Me
+If you have any questions or would like to collaborate, feel free to reach out to me at:
+- **LinkedIn**: [@Diana da Silva](https://www.linkedin.com/in/diana-da-silva-01694a1a3/)
+- **GitHub**: [@dsilva1994](https://github.com/dsilva1994)
+
+---
+
+Happy exploring! 🌟
 
 
