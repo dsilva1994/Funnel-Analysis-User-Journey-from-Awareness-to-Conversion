@@ -8,7 +8,7 @@ WITH
     category,
     RANK() OVER (PARTITION BY user_pseudo_id, event_name ORDER BY (event_timestamp) ASC) AS rank_num,
   FROM
-    `tc-da-1.turing_data_analytics.raw_events` ),
+    `project.raw_events` ),
   unique_events AS (
   SELECT
     *
